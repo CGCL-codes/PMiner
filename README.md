@@ -70,4 +70,5 @@ Each row in the above result is a triangle in the real graph. For example, the r
 
 ## Author
 PMiner is developed in National Engineering Research Center for Big Data Technology and System, Cluster and Grid Computing Lab, Services Computing Technology and System Lab, School of Computer Science and Technology, Huazhong University of Science and Technology, Wuhan, China by Tianyu Ma [(tyma@hust.edu.cn)](tyma@hust.edu.cn), Siyuan He [(syhe@hust.edu.cn)](syhe@hust.edu.cn), Pingpeng Yuan[(ppyuan@hust.edu.cn)](ppyuan@hust.edu.cn).
+
 If you have any questions, please contact Pingpeng Yuan[(ppyuan@hust.edu.cn)](ppyuan@hust.edu.cn). We welcome you to commit your modification to support our project.
