@@ -13,7 +13,7 @@ Copyright (C) 2022, [STCS & CGCL](http://grid.hust.edu.cn/) and [Huazhong Univer
 ## Version update
 ---
 1.Modify the original format of using node storage to use storage matching edges \
-2.Use in-degree constraints to trim intermediate result sets during result combination。
+2.Use in-degree constraints to trim intermediate result sets during result combination 
 
 ## Installation
 ---
