@@ -25,7 +25,7 @@ cd /PMiner/
 make
 ```
 
-## Use
+## Usage
 ---
 The user interface module provides users with a simple and convenient system operation interface. When performing graph mining tasks, the user only needs to input 5 parameters: the real graph address, the pattern graph address, the number of real graph nodes, the number of pattern graph nodes, and the output file address. The formats of the real graph and the schema graph support both the adjacency list format and the edge list format, and there is no restriction on whether the input graph has a ring or not.
 
