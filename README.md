@@ -1,13 +1,5 @@
 # PMiner v3.6.2205
-Horsky编辑于20220509
-
-## 摘要
----
-通用图挖掘系统是从图数据中发现特定结构模式的重要工具，当前图挖掘系统相关研究的核心目标是保证快速准确得到挖掘结果并减少挖掘过程中的资源消耗。随着图数据规模的急剧增长以及各领域对复杂图结构快速挖掘的需求不断增长，现有的系统已经不能适应大规模、高复杂度的图挖掘任务，其原因主要在于（1）对模式图的分析不够深入，没有充分利用模式图中包含的特征与约束；（2）未能充分考虑到不同挖掘路径和挖掘顺序的选择会对系统性能产生的影响；（3）图挖掘过程中保存不必要的中间结果，消耗过多内存空间。\
-为了应对以上的挑战，设计并实现PMiner系统。该系统通过深入分析模式图中各节点间以及各边间存在的约束关系，提出约束包含关系的概念，并设计基于约束包含关系的模式图分割方案，将挖掘任务的规模缩小数倍至数十倍。同时提出节点选择度与覆盖度的概念，结合模式图分割实现了更好的挖掘计划生成过程，给出最优的挖掘路径与顺序。最后设计实现了基于模式图分割的挖掘计划执行流程，对中间结果集的生成和更新提出复制赋值方法和共享赋值方法，从而避免了大量的冗余计算以及对不必要中间结果集的存储。\
-实验结果表明，对于8个不同规模的真实图数据集，PMiner系统在进行复杂模式图的挖掘任务时其执行速度快于最新的图挖掘系统GraphPi和Peregrine平均高达52～61倍。同时测试证明使用模式图分割方案可以有效缩减挖掘过程中产生的中间结果集大小，对内存的消耗缩减达到2～4倍。
-
-关键词： 图数据；图挖掘；模式匹配
+Edited by Horsky on 2022\05\18
 
 ## Abstract
 ---
@@ -15,54 +7,54 @@ The general graph mining system is an important tool for discovering specific st
 To meet the above challenges, the PMiner system is designed and implemented. By in-depth analysis of the constraint relationship between nodes and edges in the pattern graph, the system proposes the concept of constraint inclusion relationship, and designs a pattern graph segmentation based on constraint inclusion relationship, which reduces the scale of mining tasks by several times to several ten times. At the same time, the concepts of node selectivity and coverage are proposed, combined with pattern graph segmentation to achieve a better mining plan generation process. Finally, a new mining plan execution process is designed according to the pattern graph segmentation, and the methods of copy assignment and shared assignment are proposed for the generation and update of intermediate result sets, avoiding a large number of redundant computations and storing unnecessary intermediate result sets.\
 Experimental results show that for 8 real graph datasets of different scales, the PMiner system performs 52～61 times faster than the current state-of-the-art graph mining systems GraphPi and Peregrine on average when mining complex pattern graphs. At the same time, the test proves that using the pattern graph segmentation can reduce the memory consumption of the intermediate result set generated in the mining process by 2～4 times.
 
-Key words: Graph Data, Graph Mining, Pattern Matching
+Copyright (C) 2022, [STCS & CGCL](http://grid.hust.edu.cn/) and [Huazhong University of Science and Technology](https://www.hust.edu.cn/).
 
-## 版本更新内容：
+## Version update
 ---
-1.将原有的采用节点存储的格式修改为采用存储匹配边 \
-2.在结果组合过程中使用出入度约束削减中间结果集。
+1.Modify the original format of using node storage to use storage matching edges \
+2.Use in-degree constraints to trim intermediate result sets during result combination。
 
-## 安装说明
+## Installation
 ---
-安装前请确保已更新linux系统库并安装oneTBB依赖库，oneTBB依赖库的安装见链接：[oneTBB](https://spec.oneapi.io/versions/latest/elements/oneTBB/source/nested-index.html)\
-已经将安装所需的依赖项、编译器、编译选项封装在Makefile文件中，进入PMiner系统根目录，运行make命令即可，无需其它操作。
+Before installation, please make sure that the linux system library has been updated and the oneTBB dependent library has been installed. For the installation of the oneTBB dependent library, see the link:[oneTBB](https://spec.oneapi.io/versions/latest/elements/oneTBB/source/nested-index.html)\
+The dependencies, compilers, and compilation options required for the installation have been encapsulated in the Makefile, enter the root directory of the PMiner system, and run the make command. No other operations are required.
 ```bash
 cd /PMiner/
 make
 ```
 
-## 使用说明
+## Use
 ---
-用户接口模块为用户提供了简单便捷的系统操作接口，在进行图挖掘任务时用户仅需输入5个参数：真实图地址、模式图地址、真实图节点数、模式图节点数、输出文件地址。其中真实图与模式图的格式同时支持邻接表格式和边表格式，对输入图是否带环无限制。
+The user interface module provides users with a simple and convenient system operation interface. When performing graph mining tasks, the user only needs to input 5 parameters: the real graph address, the pattern graph address, the number of real graph nodes, the number of pattern graph nodes, and the output file address. The formats of the real graph and the schema graph support both the adjacency list format and the edge list format, and there is no restriction on whether the input graph has a ring or not.
 
-举例说明：
+For example:
 ```C++
 ./main /data/wordassociation-2011.txt p1.txt 10617 4 output.txt
 ```
-该语句表示调用main函数，在真实图wordassociation-2011中挖掘模式图p1，其中真实图节点数10617，模式图节点数4，挖掘结果保存在output.txt中。
+This statement means to call the main function to mine the pattern graph p1 in the real graph wordassociation-2011, in which the number of real graph nodes is 10617, and the number of pattern graph nodes is 4, and the mining results are saved in output.txt.
 
-## 指定线程数
+## Specify the number of threads
 ---
-PMiner系统默认使用当前平台全部线程数进行图挖掘任务，以获取最佳性能表现，如果需要指定线程数进行测试请按照以下流程操作：\
-1.打开PatternMatching.cpp文件
+By default, the PMiner system uses all the threads of the current platform to perform graph mining tasks to obtain the best performance. If you need to specify the number of threads for testing, please follow the steps below:\
+1.Open the PatternMatching.cpp file
 ```bash
 vim PatternMatching.cpp
 ```
-2.分别搜索以下语句：
+2.Search for the following statements individually:
 ```C++
 blocked_range<size_t>(0, minMatchID_PMR.size()), 0, [&](blocked_range<size_t>
 ```
 ```C++
 parallel_for(blocked_range<size_t>(0, minMatchID_PMR.size()), [&](blocked_range<size_t> r)
 ```
-在两个语句前均添加命令：
+Add the command before both statements:
 ```C++
 tbb::task_scheduler_init init(tread_num);
 ```
-其中thread_num表示希望系统运行时使用的最大线程数。
+Where thread_num represents the maximum number of threads that you want the system to use when running.
 
-## 结果说明
-挖掘结果存储在用户指定的文件中，其中每一行代表一个挖掘结果，数字代表真实图ID，比如挖掘三角形模式图的结果可能如下：
+## Result description
+The mining results are stored in a user-specified file, where each line represents a mining result, and the number represents the real graph ID. For example, the result of mining a triangle pattern graph may be as follows:
 ```
 0 15 28
 111 0 234
@@ -74,4 +66,8 @@ tbb::task_scheduler_init init(tread_num);
 99 201 38
 ···
 ```
-上述结果中每一行都是真实图中一个三角形，比如第一行的结果 0 15 28 代表在真实图中节点ID为 0 15 28 的三个节点互相之间存在边构成了三角形。
+Each row in the above result is a triangle in the real graph. For example, the result of the first row, 0 15 28, means that the three nodes with the node ID of 0 15 28 in the real graph have edges between each other to form a triangle.
+
+## Author
+PMiner is developed in National Engineering Research Center for Big Data Technology and System, Cluster and Grid Computing Lab, Services Computing Technology and System Lab, School of Computer Science and Technology, Huazhong University of Science and Technology, Wuhan, China by Tianyu Ma [(tyma@hust.edu.cn)](tyma@hust.edu.cn), Siyuan He [(syhe@hust.edu.cn)](syhe@hust.edu.cn), Pingpeng Yuan[(ppyuan@hust.edu.cn)](ppyuan@hust.edu.cn).
+If you have any questions, please contact Pingpeng Yuan[(ppyuan@hust.edu.cn)](ppyuan@hust.edu.cn). We welcome you to commit your modification to support our project.
