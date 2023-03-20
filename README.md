@@ -1,4 +1,4 @@
-# PMiner v3.6.2303
+# PMiner v3.8.2303
 
 PMiner is a high-performance graph mining system based on Pattern Graph Segmentation, which can efficiently and quickly deal with large-scale and high complexity graph mining problems. \
 \
