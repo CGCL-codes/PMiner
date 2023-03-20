@@ -1,6 +1,6 @@
 CC=g++
 CFLAG=-I
-DEPS = PatternMatching.h output.h
+DEPS = PMiner.h output.h
 
-PMiner: main.cpp PatternMatching.cpp
-	g++ main.cpp PatternMatching.cpp -ltbb -o main
+PMiner: main.cpp PMiner.cpp
+	g++ main.cpp PMiner.cpp -ltbb -o ./bin/count

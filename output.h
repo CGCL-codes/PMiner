@@ -3,22 +3,21 @@
 #include <string>
 #include <thread>
 #include <mutex>
-#include <vector>
 using namespace std;
 
-//Í¬²½ÎÄ¼ş¹ÜÀíÀà£¬Ö»ÓĞÒ»¸ö£¬¹ÜÀíËùÓĞÊä³öÀà
+//åŒæ­¥æ–‡ä»¶ç®¡ç†ç±»ï¼Œåªæœ‰ä¸€ä¸ªï¼Œç®¡ç†æ‰€æœ‰è¾“å‡ºç±»
 class SynchronizedFile {
 public:
 	SynchronizedFile(const string& path) : _path(path) {
-		//´ò¿ªÎÄ¼ş
+		//æ‰“å¼€æ–‡ä»¶
 		outfile.open(_path);
 	}
 
 	void write(const string& dataToWrite) {
-		//Ê¹ÓÃlock_guard¼ÓËøÈ·±£Í¬Ò»Ê±¼äÖ»ÓĞÒ»¸öÏß³ÌÔÚĞ´Èë£¬ÇÒĞ´Èë½áÊøºó×Ô¶¯½âËø
+		//ä½¿ç”¨lock_guardåŠ é”ç¡®ä¿åŒä¸€æ—¶é—´åªæœ‰ä¸€ä¸ªçº¿ç¨‹åœ¨å†™å…¥ï¼Œä¸”å†™å…¥ç»“æŸåè‡ªåŠ¨è§£é”
 		std::lock_guard<std::mutex> lock(_writerMutex);
 
-		//¿ªÊ¼Ğ´ÈëÎÄ¼ş
+		//å¼€å§‹å†™å…¥æ–‡ä»¶
 		outfile << dataToWrite;
 		outfile << endl;
 	}
@@ -29,20 +28,28 @@ private:
 	std::mutex _writerMutex;
 };
 
-//Êä³öÀà£¬Ã¿¸öÏß³ÌÖĞ°üº¬Ò»¸ö£¬¸ºÔğÊı¾İ´¦ÀíºÍµ÷ÓÃ¹ÜÀíÀà·½·¨½øĞĞĞ´Èë
+//è¾“å‡ºç±»ï¼Œæ¯ä¸ªçº¿ç¨‹ä¸­åŒ…å«ä¸€ä¸ªï¼Œè´Ÿè´£æ•°æ®å¤„ç†å’Œè°ƒç”¨ç®¡ç†ç±»æ–¹æ³•è¿›è¡Œå†™å…¥
 class Writer {
 public:
-	//ÕâÀïÊ¹ÓÃÖÇÄÜÖ¸ÕëÀ´¹ÜÀí£¬Ê¹µÃËùÓĞÊä³öÀàÖ¸Ïò¹ÜÀíÀà
+    //è¿™é‡Œä½¿ç”¨æ™ºèƒ½æŒ‡é’ˆæ¥ç®¡ç†ï¼Œä½¿å¾—æ‰€æœ‰è¾“å‡ºç±»æŒ‡å‘ç®¡ç†ç±»
 	Writer(std::shared_ptr<SynchronizedFile> sf) : _sf(sf) {}
 
 	void DataProcessing(std::vector<std::vector<unsigned>>& PMR_copy) {
-		//ÕâÀï½øĞĞÊı¾İ´¦Àí¹¤×÷£¬´Ë´¦´¦ÀíÎªÃ¿¸ö½á¹ûµ¥ĞĞÊä³ö
+		//è¿™é‡Œè¿›è¡Œæ•°æ®å¤„ç†å·¥ä½œï¼Œæ­¤å¤„å¤„ç†ä¸ºæ¯ä¸ªç»“æœå•è¡Œè¾“å‡º
 		string record_line = "";
-		for (unsigned i = 0; i < PMR_copy.size(); ++i) {
+        for (unsigned i = 0; i < PMR_copy.size(); ++i) {
+            record_line += 'P' + to_string(i) + ": ";
+            for (auto j : PMR_copy[i]) {
+                record_line += to_string(j) + " ";
+            }
+        }
+		_sf->write(record_line);
+	}
+	void DataProcessing(std::vector<unsigned>& PMR_copy){
+		string record_line = "";
+		for (unsigned i = 0; i < PMR_copy.size(); ++i){
 			record_line += 'P' + to_string(i) + ": ";
-			for (auto j : PMR_copy[i]) {
-				record_line += to_string(j) + " ";
-			}
+			record_line += to_string(PMR_copy[i]) + " ";
 		}
 		_sf->write(record_line);
 	}
