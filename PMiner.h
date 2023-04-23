@@ -83,12 +83,12 @@ public:
     
     PMiner(){};                                           
     virtual ~PMiner();                                   
-    void init(std::string Output_dir, int thread_num);                              // sky211116
+    void init(const std::string& Output_dir, int thread_num);                              // sky211116
     
     void FIXLINE(char *s);
-    bool build_degree_R(std::string inputfile, unsigned vertexNum); //得到degree_R
-    bool build_R_adj(std::string inputfile);                        //得到用一维数组存储的邻接表和逆邻接表
-    bool build_P_adj(std::string inputfile, unsigned vertexNum);    //用邻接矩阵存储模式图
+    bool build_degree_R(const std::string& inputfile, unsigned vertexNum); //得到degree_R
+    bool build_R_adj(const std::string& inputfile);                        //得到用一维数组存储的邻接表和逆邻接表
+    bool build_P_adj(const std::string& inputfile, unsigned vertexNum);    //用邻接矩阵存储模式图
 
 
     bool matchPR_expand();

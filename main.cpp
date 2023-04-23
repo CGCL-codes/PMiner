@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     // std::string Output_dir = argv[6];//sky211116
     // string startsIdsfile = argv[7]; //用于内存消耗测试，读入起始点地址
     //std::string flag=argv[6];//模式图的最小匹配节点是否有等价（对称）点，若有flag为true，否则flag为false
-  cout<<"==============================================================================="<<endl;
+  std::cout<<"==============================================================================="<<std::endl;
 
 
 	PMiner* pm = new PMiner();
@@ -45,8 +45,8 @@ int main(int argc, char* argv[]) {
   pm->build_constraint();
   pm->build_center_order();
 
-  cout<<R_input_file<<endl;
-  cout<<P_input_file<<endl;
+  std::cout<<R_input_file<<std::endl;
+  std::cout<<P_input_file<<std::endl;
 
   struct timeval start_time, end_time, tmp_start, tmp_end;
   gettimeofday(&start_time, NULL);

@@ -46,7 +46,7 @@ PMiner::~PMiner()
     }
 }
 
-void PMiner::init(std::string Output_dir, int thread_num)
+void PMiner::init(const std::string&Output_dir, int thread_num)
 {
     // Mining_result_count=0;
     // eqCircleResult.reserve(15000);
@@ -67,7 +67,7 @@ void PMiner::FIXLINE(char *s)
     if (s[len] == '\n')
         s[len] = 0;
 }
-bool PMiner::build_degree_R(std::string inputfile, unsigned vertexNum) //创建degree_R，测试成功
+bool PMiner::build_degree_R(const std::string&inputfile, unsigned vertexNum) //创建degree_R，测试成功
 {
     maxID = 0;     //图中最大id
     edgeNum_R = 0; //图的边数
@@ -125,7 +125,7 @@ bool PMiner::build_degree_R(std::string inputfile, unsigned vertexNum) //创建d
     fclose(inf);
     return true;
 }
-bool PMiner::build_R_adj(std::string inputfile) //创建邻接表R_adj和逆邻接表R_reverse_adj，测试成功
+bool PMiner::build_R_adj(const std::string&inputfile) //创建邻接表R_adj和逆邻接表R_reverse_adj，测试成功
 {
     R_adj = new unsigned[edgeNum_R];
     R_reverse_adj = new unsigned[edgeNum_R];
@@ -211,7 +211,7 @@ bool PMiner::build_R_adj(std::string inputfile) //创建邻接表R_adj和逆邻�
     }
     return true;
 }
-bool PMiner::build_P_adj(std::string inputfile, unsigned vertexNum)
+bool PMiner::build_P_adj(const std::string&inputfile, unsigned vertexNum)
 {
     vertexNum_P = vertexNum;
     edgeNum_P = 0;
