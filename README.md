@@ -1,6 +1,6 @@
 # PMiner v3.8.2303
 
-PMiner is a high-performance graph mining system based on Pattern Graph Segmentation, which can efficiently and quickly deal with large-scale and high complexity graph mining problems. \
+PMiner is a high-performance graph matching system based on Pattern Graph Segmentation, which can efficiently and quickly deal with large-scale and high complexity graph mining problems. \
 \
 The general graph mining system is an important tool for discovering specific structural patterns from graph data. The core goal of the existing graph mining system research is to ensure fast and accurate mining and to reduce resource consumption in the mining process. With the rapid increase in the scale of graph data and the growing demand for mining of complex structures in various fields, the existing systems have been unable to adapt to large-scale and high-complexity mining tasks. The main reasons are as follows: (1) All the graph mining systems do not fully utilize the features and constraints contained in the pattern graph; (2) These systems fail to fully consider that the selection of different mining paths and sequences will have significant differences in system performance; (3) The graph mining systems save unnecessary intermediate results during the mining process, which consumes too much memory space.\
 \
