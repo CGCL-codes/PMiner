@@ -8,7 +8,6 @@ To meet the above challenges, the PMiner system is designed and implemented. By 
 \
 Experimental results show that for 8 real graph datasets of different scales, the PMiner system performs 6677～8329 times faster than the current state-of-the-art graph mining systems Peregrine and GraphPi on average when mining complex pattern graphs. \
 \
-Copyright (C) 2022-2023, [STCS & CGCL](http://grid.hust.edu.cn/) and [Huazhong University of Science and Technology](https://www.hust.edu.cn/).
 
 ## Version update
 
@@ -49,9 +48,5 @@ For example:
 
 This statement means using the counting method (just not output) to mine the pattern graph 7_pb in the real graph Wiki-Vote with 28 threads, in which the number of real graph nodes is 8298, and the number of pattern graph nodes is 7.
 
-## Author
 
-PMiner is developed in National Engineering Research Center for Big Data Technology and System, Cluster and Grid Computing Lab, Services Computing Technology and System Lab, School of Computer Science and Technology, Huazhong University of Science and Technology, Wuhan, China by Yujiang Wang [(wangyj_@hust.edu.cn)](wangyj_@hust.edu.cn), Tianyu Ma [(tyma@hust.edu.cn)](tyma@hust.edu.cn), Siyuan He [(syhe@hust.edu.cn)](syhe@hust.edu.cn), Pingpeng Yuan[(ppyuan@hust.edu.cn)](ppyuan@hust.edu.cn).
-
-If you have any questions, please contact Pingpeng Yuan[(ppyuan@hust.edu.cn)](ppyuan@hust.edu.cn). We welcome you to commit your modification to support our project.
 
