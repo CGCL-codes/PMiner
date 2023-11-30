@@ -11,7 +11,7 @@
 using namespace std;
 using namespace tbb;
 
-PMiner::~PMiner()
+PatternMatching::~PatternMatching()
 {
     /* if (R_visited)
     {
@@ -46,7 +46,7 @@ PMiner::~PMiner()
     }
 }
 
-void PMiner::init(const std::string&Output_dir, int thread_num)
+void PatternMatching::init(const std::string &Output_dir, int thread_num)
 {
     // Mining_result_count=0;
     // eqCircleResult.reserve(15000);
@@ -60,14 +60,175 @@ void PMiner::init(const std::string&Output_dir, int thread_num)
 
 
 // ======================================================数据读入处理-start==========================================================
-// 将换行符变成'\0' 
-void PMiner::FIXLINE(char *s)
+bool PatternMatching::build_degree_Rs(const std::string &inputfile, unsigned vertexNum) //创建degree_R，测试成功
+{
+    cout<<"build_degree_Rs"<<endl;
+    maxID = 0;     //图中最大id
+    edgeNum_R = 0; //图的边数
+    vertexNum_R = vertexNum;
+    degree_R = (Degree *)calloc(vertexNum_R, sizeof(Degree));
+
+    ifstream infile(inputfile);
+    assert(infile.is_open());
+    string line;
+    getline(infile, line);
+    istringstream iss(line);
+        // 读入顶点个数和边数
+    string Nodes, Edges;
+    iss>>Nodes>>vertexNum_R>>Edges>>edgeNum_R;
+    vertexNum_R++; // 保证不越界
+    cout<<"vertexNum_R: "<<vertexNum_R<<endl;
+    cout<<"edgeNum_R: "<<edgeNum_R<<endl;
+    unsigned from, to;
+
+    // int equil = 0;
+    while (getline(infile, line))
+    {
+        istringstream iss(line);
+        iss >> from >> to;
+        if (from != to){
+          degree_R[from].outdeg++;
+          degree_R[to].indeg++;
+        }
+        // else{
+        //   equil++;
+        // }
+    }
+    infile.close();
+    // std::cout<<"edgeNum_R: "<<edgeNum_R<<std::endl;
+    // cout<<"maxid: "<<maxID<<endl;
+    // cout<<"vertexNum_exact: "<<vertexNum_exact.size()<<endl;
+    // cout<<"equil: "<<equil<<endl;
+    std::cout << "finish first read degree_Rs" << std::endl;
+    return true;
+}
+bool PatternMatching::build_R_adjs(const std::string &inputfile) //创建邻接表R_adj和逆邻接表R_reverse_adj，测试成功
+{
+    R_adj = new unsigned[edgeNum_R];
+    R_reverse_adj = new unsigned[edgeNum_R];
+    R_adjIndex = new unsigned[vertexNum_R+1];
+    R_reverseAdjIndex = new unsigned[vertexNum_R+1];
+    unsigned *R_reverseAdjIndex_tail = new unsigned[vertexNum_R+1];
+    unsigned *R_AdjIndex_tail = new unsigned[vertexNum_R+1];
+    memset(R_reverseAdjIndex_tail, 0, vertexNum_R);
+    memset(R_AdjIndex_tail, 0, vertexNum_R);
+    R_adjIndex[0] = 0;
+    R_reverseAdjIndex[0] = 0;
+    R_AdjIndex_tail[0] = 0;
+    R_reverseAdjIndex_tail[0] = 0;
+
+    for (unsigned i = 1; i <=vertexNum_R; i++)
+    {
+        R_adjIndex[i] = R_adjIndex[i - 1] + degree_R[i - 1].outdeg;
+        R_reverseAdjIndex[i] = R_reverseAdjIndex[i - 1] + degree_R[i - 1].indeg;
+        R_AdjIndex_tail[i] = R_adjIndex[i];
+        R_reverseAdjIndex_tail[i] = R_reverseAdjIndex[i];
+    }
+
+    ifstream infile(inputfile);
+    assert(infile.is_open());
+    string line;
+    getline(infile, line); // 第一行不要
+    unsigned from, to;
+    while (getline(infile, line))
+    {
+        // if (line.empty())
+        //     continue;
+        istringstream iss(line);
+        iss >> from >> to;
+        if (from != to)
+        {
+            R_adj[R_AdjIndex_tail[from]++] = to;
+            R_reverse_adj[R_reverseAdjIndex_tail[to]++] = from;
+        }
+    }
+    infile.close();
+    free(R_AdjIndex_tail);
+    free(R_reverseAdjIndex_tail);
+    std::cout << "finish first read R_adjs" << std::endl;
+
+    // 清除辅助数据
+    if (degree_R)
+    {
+        free(degree_R);
+        degree_R = nullptr;
+    }
+
+    /* for(int i=0;i<edgeNum_R;i++){
+        cout<<R_adj[i]<<" ";
+    }
+    cout<<endl;
+    for(int i=0;i<vertexNum_R;i++){
+        cout<<R_adjIndex[i]<<" ";
+    }
+    cout<<endl; */
+    // std::cout << "finish second read R_adj..." << std::endl;
+    //多重边检测
+    // bool isMul=false;
+    // for(int i=0;i<vertexNum_R;i++){
+    //     if(degree_R[i].outdeg<2)
+    //     continue;
+    //     for(int j=1;j<degree_R[i].outdeg;j++){
+    //         if(R_adj[R_adjIndex[i]+j]==R_adj[R_adjIndex[i]+j-1]){
+    //           cout<<i<<"--->"<<R_adj[R_adjIndex[i]+j]<<endl;
+    //             cout<<"exist same edge"<<endl;
+    //             isMul=true;
+    //         }
+
+    //     }
+    // }
+    // if(!isMul){
+    //     cout<<"There are no multiple edges in the data set"<<endl;
+    // }
+
+
+    // int Rid = 8222;
+    // unsigned rout = degree_R[Rid].outdeg;
+    // unsigned rin = degree_R[Rid].indeg;
+
+    // unsigned radjindex = R_adjIndex[Rid];
+    // cout<<"degree_R[10777].outdeg: "<<rout<<endl;
+    // for(int i = 0 ; i< rout; ++i){
+    //   cout<<R_adj[radjindex+i]<<endl;
+    // }
+    // cout<<"---------------------"<<endl;
+    // unsigned rradjindex = R_adjIndex[Rid];
+    // cout<<"degree_R[10777].indeg: "<<rin<<endl;
+    // for(int i = 0 ; i< rin; ++i){
+    //   cout<<R_reverse_adj[rradjindex+i]<<endl;
+    // }
+
+
+    // cout<<"R_adjIndex: ";
+    // for(unsigned i = 0 ; i<vertexNum_R; ++i){
+    //   cout<<R_adjIndex[i]<<" ";
+    // }
+    // cout<<endl;
+    // cout<<"R_adj: ";
+    // for(unsigned i = 0 ; i<edgeNum_R; ++i){
+    //   cout<<R_adj[i]<<" ";
+    // }
+    // cout<<endl;
+    // cout<<"R_reverseAdjIndex: ";
+    // for(unsigned i = 0 ; i<vertexNum_R; ++i){
+    //   cout<<R_reverseAdjIndex[i]<<" ";
+    // }
+    // cout<<endl;
+    // cout<<"R_reverse_adj: ";
+    // for(unsigned i = 0 ; i<edgeNum_R; ++i){
+    //   cout<<R_reverse_adj[i]<<" ";
+    // }
+    // cout<<endl;
+    return true;
+}
+// 将换行符变成'\0' 在build_degree_R、build_R_adj、build_P_adj中调用
+void PatternMatching::FIXLINE(char *s)
 {
     int len = (int)strlen(s) - 1;
     if (s[len] == '\n')
         s[len] = 0;
 }
-bool PMiner::build_degree_R(const std::string&inputfile, unsigned vertexNum) //创建degree_R，测试成功
+bool PatternMatching::build_degree_R(const std::string &inputfile, unsigned vertexNum) //创建degree_R，测试成功
 {
     maxID = 0;     //图中最大id
     edgeNum_R = 0; //图的边数
@@ -125,7 +286,7 @@ bool PMiner::build_degree_R(const std::string&inputfile, unsigned vertexNum) //�
     fclose(inf);
     return true;
 }
-bool PMiner::build_R_adj(const std::string&inputfile) //创建邻接表R_adj和逆邻接表R_reverse_adj，测试成功
+bool PatternMatching::build_R_adj(const std::string &inputfile) //创建邻接表R_adj和逆邻接表R_reverse_adj，测试成功
 {
     R_adj = new unsigned[edgeNum_R];
     R_reverse_adj = new unsigned[edgeNum_R];
@@ -178,6 +339,15 @@ bool PMiner::build_R_adj(const std::string&inputfile) //创建邻接表R_adj和�
             }
         }
     }
+    /* for(int i=0;i<edgeNum_R;i++){
+        cout<<R_adj[i]<<" ";
+    }
+    cout<<endl;
+    for(int i=0;i<vertexNum_R;i++){
+        cout<<R_adjIndex[i]<<" ";
+    }
+    cout<<endl; */
+    // std::cout << "finish second read R_adj..." << std::endl;
     //多重边检测
     // bool isMul=false;
     // for(int i=0;i<vertexNum_R;i++){
@@ -209,9 +379,48 @@ bool PMiner::build_R_adj(const std::string&inputfile) //创建邻接表R_adj和�
         free(degree_R);
         degree_R = nullptr;
     }
+
+
+    // int Rid = 8222;
+    // unsigned rout = degree_R[Rid].outdeg;
+    // unsigned rin = degree_R[Rid].indeg;
+
+    // unsigned radjindex = R_adjIndex[Rid];
+    // cout<<"degree_R[10777].outdeg: "<<rout<<endl;
+    // for(int i = 0 ; i< rout; ++i){
+    //   cout<<R_adj[radjindex+i]<<endl;
+    // }
+    // cout<<"---------------------"<<endl;
+    // unsigned rradjindex = R_adjIndex[Rid];
+    // cout<<"degree_R[10777].indeg: "<<rin<<endl;
+    // for(int i = 0 ; i< rin; ++i){
+    //   cout<<R_reverse_adj[rradjindex+i]<<endl;
+    // }
+
+
+    // cout<<"R_adjIndex: ";
+    // for(unsigned i = 0 ; i<vertexNum_R; ++i){
+    //   cout<<R_adjIndex[i]<<" ";
+    // }
+    // cout<<endl;
+    // cout<<"R_adj: ";
+    // for(unsigned i = 0 ; i<edgeNum_R; ++i){
+    //   cout<<R_adj[i]<<" ";
+    // }
+    // cout<<endl;
+    // cout<<"R_reverseAdjIndex: ";
+    // for(unsigned i = 0 ; i<vertexNum_R; ++i){
+    //   cout<<R_reverseAdjIndex[i]<<" ";
+    // }
+    // cout<<endl;
+    // cout<<"R_reverse_adj: ";
+    // for(unsigned i = 0 ; i<edgeNum_R; ++i){
+    //   cout<<R_reverse_adj[i]<<" ";
+    // }
+    // cout<<endl;
     return true;
 }
-bool PMiner::build_P_adj(const std::string&inputfile, unsigned vertexNum)
+bool PatternMatching::build_P_adj(const std::string &inputfile, unsigned vertexNum)
 {
     vertexNum_P = vertexNum;
     edgeNum_P = 0;
@@ -261,7 +470,8 @@ bool PMiner::build_P_adj(const std::string&inputfile, unsigned vertexNum)
 
 
 // ======================================================预处理-start==========================================================
-bool PMiner::matchPR_expand()
+// 起始点的确定
+bool PatternMatching::matchPR_expand()
 {
     // 按真实图匹配点最少的点作为起点
     // sel.resize(vertexNum_P); //初始化选择度
@@ -309,17 +519,17 @@ bool PMiner::matchPR_expand()
       }
     }
 
-    // cout<<"minMatchIDs: ";
-    // for(auto& a : minMatchIDs){
-    //   cout<<a<<" ";
-    // }
-    // cout<<endl;
+    cout<<"minMatchIDs: ";
+    for(auto& a : minMatchIDs){
+      cout<<a<<" ";
+    }
+    cout<<endl;
 
     
     return true;
 }
-//判断P_visited中是否还有点未访问
-bool PMiner::PVAllVisited(vector<int> P_visited)
+//判断P_visited中是否还有点未访问 findSym中调用
+bool PatternMatching::PVAllVisited(vector<int> P_visited)
 {
     for (auto k : P_visited)
     {
@@ -330,7 +540,7 @@ bool PMiner::PVAllVisited(vector<int> P_visited)
 }
 
 // 计算等价点、等价环
-void PMiner::findSym()
+void PatternMatching::findSym()
 {
     // cout << "-----" << endl;
     vector<int> P_visited(vertexNum_P, 0);
@@ -420,32 +630,46 @@ void PMiner::findSym()
     }
 
 
+
     // 3 是否自同构  有等价点则自同构
     isSym = false;
     if(sym.size() > 0){
       isSym = true;
-      cout<<"exist sym....."<<endl;
-      cout<<"Equivalent_order:"<<endl;
-      for(auto vec:Equivalent_order){
-          for(auto k:vec){
-              cout<<k<<" ";
-          }
-          cout<<endl;
-      }
+      cout<<"sym:yes"<<endl;
+      // cout<<"exist sym....."<<endl;
+      // cout<<"Equivalent_order:"<<endl;
+      // for(auto vec:Equivalent_order){
+      //     for(auto k:vec){
+      //         cout<<k<<" ";
+      //     }
+      //     cout<<endl;
+      // }
+    }else
+    {
+      cout<<"sym:no"<<endl;
     }
+    
 
     // 4 判断是否有环
     // 等价点组中任意两点之间有边(就取等价点组的第一个和第二个点)，则该等价点组构成等价环
-    for (auto it = sym_group.begin(); it != sym_group.end(); it++)
-    {
-        auto s = it->second;
-        P_ID first = *(s.begin());
-        P_ID second = *(++s.begin());
-        // cout<<first<<",,,,,,,"<<second<<endl;
-        if(P_adj[first][second] == 1 || P_adj[second][first] == 1){
-          isEqCircle = true;
-          circleSize = s.size();
-        }
+    // for (auto it = sym_group.begin(); it != sym_group.end(); it++)
+    // {
+    //     auto s = it->second;
+    //     P_ID first = *(s.begin());
+    //     P_ID second = *(++s.begin());
+    //     // cout<<first<<",,,,,,,"<<second<<endl;
+    //     if(P_adj[first][second] == 1 || P_adj[second][first] == 1){
+    //       isEqCircle = true;
+    //       circleSize = s.size();
+    //     }
+    // }
+
+    // sky20231007
+    // 只有一个等价点组，且等价点组的元素覆盖原模式图的所有顶点，且原模式图正好有n条边（有n个顶点）
+    // 注意sym_group是一个unordered_map, 只有一个等价点组的时候键值为1
+    if(sym_group.size() == 1 && sym_group[1].size() == vertexNum_P && edgeNum_P == vertexNum_P){
+      isEqCircle = true;
+      circleSize = vertexNum_P;
     }
 
     if (isEqCircle)
@@ -508,17 +732,18 @@ void PMiner::findSym()
     //     cout << it->first << " " << it->second << endl;
     // }
     // //测试
-    // cout << "sym_group" << endl;
-    // for (auto it = sym_group.begin(); it != sym_group.end(); it++){
-    //    cout<<it->first<<": ";
-    //    for (auto iter = it->second.begin(); iter != it->second.end(); iter++){
-    //      cout<<*iter<<" ";
-    //    }
-    //    cout<<endl;
-    // }
+    cout << "sym_group" << endl;
+    for (auto it = sym_group.begin(); it != sym_group.end(); it++){
+       cout<<it->first<<": ";
+       for (auto iter = it->second.begin(); iter != it->second.end(); iter++){
+         cout<<*iter<<" ";
+       }
+       cout<<endl;
+    }
     // print_P_adj(P_adj);
 }
-void PMiner::sym_searchPG(std::vector<std::vector<unsigned>> PMR_copy, std::vector<int> sel_copy, std::vector<std::vector<P_ID>> P_adj_copy, 
+// visited_edgeNum无用
+void PatternMatching::sym_searchPG(std::vector<std::vector<unsigned>> PMR_copy, std::vector<int> sel_copy, std::vector<std::vector<P_ID>> P_adj_copy, 
 R_ID current_match_RID, P_ID current_match_PID, bool branchFinish, long long &result, int ori_centerID, unordered_map<R_ID, int> isTraversed)
 {
     // cout<<"---------sym_searchPG----start--------------"<<endl;
@@ -634,7 +859,7 @@ R_ID current_match_RID, P_ID current_match_PID, bool branchFinish, long long &re
     return;
 }
 //重载版本，用于检测对称点
-void PMiner::sym_reverse_extendEdgePattern(P_ID v_pt, P_ID v_ps, R_ID cur_r_vt, std::vector<std::vector<unsigned>> &PMR_copy, std::vector<int> &sel_copy, 
+void PatternMatching::sym_reverse_extendEdgePattern(P_ID v_pt, P_ID v_ps, R_ID cur_r_vt, std::vector<std::vector<unsigned>> &PMR_copy, std::vector<int> &sel_copy, 
 std::vector<std::vector<P_ID>> &P_adj, bool &branchFinish, unordered_map<R_ID, int> isTraversed)
 {
     // cout<<"---------sym_reverse_extendEdgePattern----start--------------"<<endl;
@@ -689,7 +914,7 @@ std::vector<std::vector<P_ID>> &P_adj, bool &branchFinish, unordered_map<R_ID, i
     return;
 }
 //重载，用于等价点检测
-void PMiner::sym_extendEdgePattern(P_ID v_ps, P_ID v_pt, R_ID cur_r_vs, std::vector<std::vector<unsigned>> &PMR_copy, std::vector<int> &sel_copy, 
+void PatternMatching::sym_extendEdgePattern(P_ID v_ps, P_ID v_pt, R_ID cur_r_vs, std::vector<std::vector<unsigned>> &PMR_copy, std::vector<int> &sel_copy, 
 std::vector<std::vector<P_ID>> &P_adj, bool &branchFinish, unordered_map<R_ID, int> isTraversed)
 {
     // cout<<"---------sym_extendEdgePattern----start--------------"<<endl;
@@ -736,8 +961,8 @@ std::vector<std::vector<P_ID>> &P_adj, bool &branchFinish, unordered_map<R_ID, i
     return;
 }
 
-// 构建模式图的约束包含关系
-void PMiner::build_constraint(){
+// 构建模式图的约束包含关系  和起点、路径无关
+void PatternMatching::build_constraint(){
   // 1 构建从每个点出发，分出入度，按从约束包含关系弱到约束包含关系强的访问顺序
   for(int i = 0 ; i< vertexNum_P; i++){
     //利用multimap的自动排序来排序约束包含点， int记录点的总出入度和，P_ID记录点，后续遍历即可得到按约束包含关系(总出入度和)大小的排序的点序
@@ -917,7 +1142,8 @@ void PMiner::build_constraint(){
   //   }
   // }
 }
-void PMiner::build_center_order(){
+// 构建中心点访问顺序  挖掘完所有边的情况下使得作为中心点的点尽可能的少  前置条件：知道第一个中心点，起点：minMatchID
+void PatternMatching::build_center_order(){
   // 1 寻找最优路劲
   int order_sel = INT32_MAX; // 路径选择度
   for(auto& minMatchID : minMatchIDs){
@@ -930,20 +1156,20 @@ void PMiner::build_center_order(){
   }
   // center_order = {4,0,1,5};
   // center_order = {4,5,2,0};
-  // cout<<"center_order: ";
-  // for(int j = 0 ; j< center_order.size() ; ++j){
-  //   cout<<center_order[j]<<" ";
-  // }
-  // cout<<endl;
+  cout<<"center_order: ";
+  for(int j = 0 ; j< center_order.size() ; ++j){
+    cout<<center_order[j]<<" ";
+  }
+  cout<<endl;
 
   // 2 确定全局中心点
   // 将路径的起点作为中心点，赋值给全局中心点
   minMatchID = center_order[0];
-  // std::cout << "minMatchID = " << minMatchID << std::endl;
+  std::cout << "minMatchID = " << minMatchID << std::endl;
 
   // 3 计算需要全排的行数
   need_full = vertexNum_P-center_order.size();
-  // cout<<"need_full: "<<need_full<<endl;
+  cout<<"need_full: "<<need_full<<endl;
   // 4 构建需要全排的PMR行的索引
   unordered_set<P_ID> co_temp(center_order.begin(),center_order.end());
   vector<int> temp;
@@ -953,11 +1179,11 @@ void PMiner::build_center_order(){
     }
   }
   full_index = temp;
-  // cout<<"full_index: ";
-  // for(auto& a : full_index){
-  //   cout<<a<<" ";
-  // }
-  // cout<<endl;
+  cout<<"full_index: ";
+  for(auto& a : full_index){
+    cout<<a<<" ";
+  }
+  cout<<endl;
 
 
   // // 5 判断需要全排的索引行时候需要去重
@@ -981,10 +1207,11 @@ void PMiner::build_center_order(){
   //   // 将iddegree整理到idnofull中
   //   if()
   // }
-  // need_full_no_dup_rem = true;
+  need_full_no_dup_rem = true;
   
 }
-void PMiner::center_order_dfs(P_ID preCenter, std::vector<std::vector<P_ID>>P_adj_copy, vector<P_ID> temp_center_order, int center_oreder_size, 
+// 递归访问模式图 在build_center_order中调动
+void PatternMatching::center_order_dfs(P_ID preCenter, std::vector<std::vector<P_ID>>P_adj_copy, vector<P_ID> temp_center_order, int center_oreder_size, 
                                        int cur_order_sel, int & order_sel, vector<int> marked){
   marked[preCenter] = 2; //标记为中心点
 
@@ -1084,7 +1311,7 @@ void PMiner::center_order_dfs(P_ID preCenter, std::vector<std::vector<P_ID>>P_ad
 // ======================================================预处理-end==========================================================
 
 // ======================================================环处理-start==========================================================
-void PMiner::searchALLCircle()
+void PatternMatching::searchALLCircle()
 {
     std::cout << "Start Circle graph mining..." << std::endl;
     int degree_P_in = degree_P[minMatchID].indeg;
@@ -1157,7 +1384,7 @@ void PMiner::searchALLCircle()
 }
 
 // 3点等价环处理  计数 已去重
-unsigned long long PMiner::three_Circle_Multithreaded_search(unsigned i){
+unsigned long long PatternMatching::three_Circle_Multithreaded_search(unsigned i){
   unsigned long long result = 0;
   R_ID first_R_id = minMatchID_PMR[i];
 
@@ -1178,7 +1405,7 @@ unsigned long long PMiner::three_Circle_Multithreaded_search(unsigned i){
 }
 
 // 3点等价环处理 输出 已去重
-unsigned long long PMiner::three_full_Circle_Multithreaded_search(unsigned i){
+unsigned long long PatternMatching::three_full_Circle_Multithreaded_search(unsigned i){
   unsigned long long result = 0;
   R_ID first_R_id = minMatchID_PMR[i];
 
@@ -1201,7 +1428,7 @@ unsigned long long PMiner::three_full_Circle_Multithreaded_search(unsigned i){
 }
 
 // 4点等价环处理 计数 已去重
-unsigned long long PMiner::four_Circle_Multithreaded_search(unsigned i){
+unsigned long long PatternMatching::four_Circle_Multithreaded_search(unsigned i){
   unsigned long long result = 0;
   R_ID first_R_id = minMatchID_PMR[i];
   unsigned first_out_start = R_adjIndex[first_R_id];
@@ -1225,7 +1452,7 @@ unsigned long long PMiner::four_Circle_Multithreaded_search(unsigned i){
 }
 
 // 4点等价环处理 输出  已去重
-unsigned long long PMiner::four_full_Circle_Multithreaded_search(unsigned i){
+unsigned long long PatternMatching::four_full_Circle_Multithreaded_search(unsigned i){
   unsigned long long result = 0;
   R_ID first_R_id = minMatchID_PMR[i];
   unsigned first_out_start = R_adjIndex[first_R_id];
@@ -1253,7 +1480,10 @@ unsigned long long PMiner::four_full_Circle_Multithreaded_search(unsigned i){
   return result;
 }
 
-unsigned PMiner::R_adj_merge(R_ID first_R_id, R_ID last_R_id){
+// 直接访问R_adj 求交 3环处理中调用， 第一个参数是环的起始点，用该点的入度点求交，
+// 第二个参数是环的倒数第二个点，用该点的出度点求交，求交结果即满足条件的环最后一个点
+// 返回求交个数
+unsigned PatternMatching::R_adj_merge(R_ID first_R_id, R_ID last_R_id){
   // cout<<"R_adj_merge: "<<first_R_id<<"----"<<last_R_id<<endl;
     unsigned count = 0;
 
@@ -1286,7 +1516,10 @@ unsigned PMiner::R_adj_merge(R_ID first_R_id, R_ID last_R_id){
     return count;
 }
 
-void PMiner::R_adj_merge_full(R_ID first_R_id, R_ID last_R_id, vector<R_ID> &PMR){
+// 直接访问R_adj 求交 3环处理中调用， 第一个参数是环的起始点，用该点的入度点求交，
+// 第二个参数是环的倒数第二个点，用该点的出度点求交，求交结果即满足条件的环最后一个点
+// 第三个参数是求交结果，求交结果满足比起始点大
+void PatternMatching::R_adj_merge_full(R_ID first_R_id, R_ID last_R_id, vector<R_ID> &PMR){
   // cout<<"R_adj_merge: "<<first_R_id<<"----"<<last_R_id<<endl;
     unsigned istart = R_reverseAdjIndex[first_R_id];
     unsigned iend = R_reverseAdjIndex[first_R_id+1];
@@ -1315,7 +1548,11 @@ void PMiner::R_adj_merge_full(R_ID first_R_id, R_ID last_R_id, vector<R_ID> &PMR
 }
 
 
-unsigned PMiner::R_adj_merge_four(R_ID first_R_id, R_ID second_R_id,  R_ID last_R_id){
+// 直接访问R_adj 求交 4 环处理中调用， 第一个参数是环的起始点，用该点的入度点求交，
+// 第二个参数是环的倒数第二个点，用该点的出度点求交，求交结果即满足条件的环最后一个点
+// 返回求交个数
+// 相对R_adj_merge 添加求交结果不能为second_R_id  4点环唯一重复的情况就是second_R_id和four_R_id可能重复
+unsigned PatternMatching::R_adj_merge_four(R_ID first_R_id, R_ID second_R_id,  R_ID last_R_id){
   // cout<<"R_adj_merge: "<<first_R_id<<"----"<<last_R_id<<endl;
     unsigned count = 0;
 
@@ -1348,7 +1585,11 @@ unsigned PMiner::R_adj_merge_four(R_ID first_R_id, R_ID second_R_id,  R_ID last_
     return count;
 }
 
-void PMiner::R_adj_merge_full_four(R_ID first_R_id, R_ID second_R_id, R_ID last_R_id, vector<R_ID> &PMR){
+// 直接访问R_adj 求交 4 环处理中调用， 第一个参数是环的起始点，用该点的入度点求交，
+// 第二个参数是环的倒数第二个点，用该点的出度点求交，求交结果即满足条件的环最后一个点
+// 第三个参数是求交结果，求交结果满足比起始点大
+// 相对R_adj_merge 添加求交结果不能为second_R_id  4点环唯一重复的情况就是second_R_id和four_R_id可能重复
+void PatternMatching::R_adj_merge_full_four(R_ID first_R_id, R_ID second_R_id, R_ID last_R_id, vector<R_ID> &PMR){
   // cout<<"R_adj_merge: "<<first_R_id<<"----"<<last_R_id<<endl;
     unsigned istart = R_reverseAdjIndex[first_R_id];
     unsigned iend = R_reverseAdjIndex[first_R_id+1];
@@ -1376,7 +1617,8 @@ void PMiner::R_adj_merge_full_four(R_ID first_R_id, R_ID second_R_id, R_ID last_
     }
 }
 
-unsigned long long PMiner::eqCircle_Multithreaded_search(R_ID i)
+//等价环多线程函数 处理3 4 环以外的环
+unsigned long long PatternMatching::eqCircle_Multithreaded_search(R_ID i)
 {
     /* std::vector<std::vector<unsigned>> PMR_initialValue;
     PMR_initialValue.resize(vertexNum_P);
@@ -1401,8 +1643,8 @@ unsigned long long PMiner::eqCircle_Multithreaded_search(R_ID i)
      maxDFS(PMR_copy, minMatchID_PMR[i], r_result, 0,mp); */
     return result;
 }
-
-void PMiner::minDFS(vector<R_ID> PMR_copy, R_ID ori_centerId, long long &result, int curTime, unordered_map<R_ID, int> mp)
+// 深度优先递归挖掘 eqCircle_Multithreaded_search中调用
+void PatternMatching::minDFS(vector<R_ID> PMR_copy, R_ID ori_centerId, long long &result, int curTime, unordered_map<R_ID, int> mp)
 {
     if (curTime == circleSize - 1)
     {
@@ -1441,7 +1683,7 @@ void PMiner::minDFS(vector<R_ID> PMR_copy, R_ID ori_centerId, long long &result,
 
 
 
-void PMiner::searchAllPR()
+void PatternMatching::searchAllPR()
 {
     std::cout << "Start graph mining..." << std::endl;
     // Mining_result_count = 0; //每次挖掘开始，初始化结果计数
@@ -1494,6 +1736,9 @@ void PMiner::searchAllPR()
     unsigned long long finalAns = parallel_reduce(blocked_range<size_t>(0, minMatchID_PMR_num), (unsigned long long)0, [&](blocked_range<size_t> r, long long ans)
                                         {        
                                             for(int i=r.begin();i!=r.end();++i){
+                                                // unsigned long long tmp = Multithreaded_search(i);
+                                                // cout<<"tmp: "<<tmp<<endl;
+                                                // ans+=tmp;
                                                 ans+=Multithreaded_search(i);
                                             }
                                             return ans;
@@ -1510,7 +1755,7 @@ void PMiner::searchAllPR()
 }
 
 //常规图多线程核心函数
-unsigned long long PMiner::Multithreaded_search(R_ID i)
+unsigned long long PatternMatching::Multithreaded_search(R_ID i)
 {
     // cout << "P_adj:" << endl;
     // for (P_ID i = 0; i < vertexNum_P; i++)
@@ -1528,21 +1773,23 @@ unsigned long long PMiner::Multithreaded_search(R_ID i)
     int P_center_index = 0; // 中心点在center_center中的索引
     unordered_set<R_ID> isTraversed; //已经作为中心点的真实点
     isTraversed.insert(minMatchID_PMR[i]); // 第一个中心点的真实点
+    PMR[center_order[P_center_index]].emplace_back(minMatchID_PMR[i]);
     unsigned long long Mining_result_count = searchPG(PMR, P_adj_copy, minMatchID_PMR[i], P_center_index,isTraversed);
     return Mining_result_count;
 }
 
-unsigned long long PMiner::searchPG(std::vector<std::vector<unsigned>> PMR_copy, std::vector<std::vector<P_ID>> P_adj_copy, R_ID current_match_RID,
-int P_center_index, unordered_set<R_ID> isTraversed)
+unsigned long long PatternMatching::searchPG(std::vector<std::vector<unsigned>> PMR_copy, std::vector<std::vector<P_ID>> P_adj_copy, R_ID current_match_RID,
+int P_center_index, unordered_set<R_ID>& isTraversed)
 {
     P_ID current_match_PID = center_order[P_center_index];
     P_center_index++;
     // cout<<"---------searchPG----start--------------"<<endl;
     
     //相比上面的方法，有更快的算法，如下，使用交换的方式
-    std::vector<unsigned> temp;
-    temp.emplace_back(current_match_RID);
-    PMR_copy[current_match_PID].swap(temp);
+    // sky 20230508 注释  在上一层就替换
+    // std::vector<unsigned> temp;
+    // temp.emplace_back(current_match_RID);
+    // PMR_copy[current_match_PID].swap(temp);
 
     //下面我们开始寻找从current_match_PID出发的所有未访问边，并对每条边做extend操作
     // 1 正向扩展
@@ -1555,19 +1802,21 @@ int P_center_index, unordered_set<R_ID> isTraversed)
       unsigned long long result = 0;
       current_match_PID = center_order[P_center_index];
       //从这里开始非中心点的递归过程，也就是中心点所拓展的边已经全部匹配完成
-      for (auto match_RID : PMR_copy[current_match_PID])
+      std::vector<unsigned> temp; // sky 20230508
+      PMR_copy[current_match_PID].swap(temp);// sky 20230508
+      for (auto match_RID : temp)
       {
           if (isTraversed.count(match_RID) == 0)
           {
               isTraversed.insert(match_RID);
+              PMR_copy[current_match_PID].emplace_back(match_RID); // sky 20230508
               result += searchPG(PMR_copy, P_adj_copy, match_RID, P_center_index, isTraversed);
+              PMR_copy[current_match_PID].pop_back(); // sky 20230508
               isTraversed.erase(match_RID);
           }
       }
       return result;
     }else{
-      /*  Writer writer(outputfile_ptr);
-        writer.DataProcessing(PMR_copy); */
       // 递归到底  集合运算或者全排列
       // return count_set(PMR_copy,isTraversed); // 集合运算计数
       return count_full(PMR_copy,isTraversed); // 全排列计数
@@ -1578,8 +1827,8 @@ int P_center_index, unordered_set<R_ID> isTraversed)
     // cout<<"---------searchPG----end--------------"<<endl;
 }
 
-// 判断模式图中是否还有边没有访问 
-bool PMiner::isNextEPatternEmpty(std::vector<std::vector<P_ID>> &P_adj_copy)
+// 判断模式图中是否还有边没有访问 searchPG sym_searchPG中调用 还有边未访问返回false
+bool PatternMatching::isNextEPatternEmpty(std::vector<std::vector<P_ID>> &P_adj_copy)
 {
     for (unsigned i = 0; i < vertexNum_P; i++)
     {
@@ -1593,8 +1842,8 @@ bool PMiner::isNextEPatternEmpty(std::vector<std::vector<P_ID>> &P_adj_copy)
 }
 
 //正向扩展
-bool PMiner::extendEdgePattern(P_ID v_ps, R_ID cur_r_vs, std::vector<std::vector<unsigned>> &PMR_copy,
-std::vector<std::vector<P_ID>> &P_adj, unordered_set<R_ID> isTraversed)
+bool PatternMatching::extendEdgePattern(P_ID v_ps, R_ID cur_r_vs, std::vector<std::vector<unsigned>> &PMR_copy,
+std::vector<std::vector<P_ID>> &P_adj, unordered_set<R_ID>& isTraversed)
 {
     // cout<<"---------extendEdgePattern----start--------------"<<endl;
     // cout<<"("<<v_ps<<")"<<"----"<<cur_r_vs<<endl;
@@ -1706,8 +1955,8 @@ std::vector<std::vector<P_ID>> &P_adj, unordered_set<R_ID> isTraversed)
 }
 
 //逆向扩展
-bool PMiner::reverse_extendEdgePattern(P_ID v_pt, R_ID cur_r_vt, std::vector<std::vector<unsigned>> &PMR_copy,
-std::vector<std::vector<P_ID>> &P_adj, unordered_set<R_ID> isTraversed)
+bool PatternMatching::reverse_extendEdgePattern(P_ID v_pt, R_ID cur_r_vt, std::vector<std::vector<unsigned>> &PMR_copy,
+std::vector<std::vector<P_ID>> &P_adj, unordered_set<R_ID>& isTraversed)
 {
     // cout<<"---------reverse_extendEdgePattern----start--------------"<<endl;
     // cout<<"("<<v_pt<<")"<<"----"<<cur_r_vt<<endl;
@@ -1830,7 +2079,8 @@ std::vector<std::vector<P_ID>> &P_adj, unordered_set<R_ID> isTraversed)
     return true;
 }
 
-unsigned long long PMiner::count_set(std::vector<std::vector<unsigned>> &PMR_copy, unordered_set<R_ID> isTraversed){
+// 集合运算计数
+unsigned long long PatternMatching::count_set(std::vector<std::vector<unsigned>> &PMR_copy, unordered_set<R_ID>& isTraversed){
   if(need_full == 0){
     return 1;
   }else{
@@ -1922,7 +2172,8 @@ unsigned long long PMiner::count_set(std::vector<std::vector<unsigned>> &PMR_cop
   }
 }
 
-unsigned long long PMiner::count_full(std::vector<std::vector<unsigned>> &PMR_copy, unordered_set<R_ID> isTraversed){
+// 全排列计数  待完成
+unsigned long long PatternMatching::count_full(std::vector<std::vector<unsigned>> &PMR_copy, unordered_set<R_ID>& isTraversed){
   // cout<<"====================count_full=============="<<endl;
   if(need_full == 0){
     return 1;
@@ -1968,8 +2219,8 @@ unsigned long long PMiner::count_full(std::vector<std::vector<unsigned>> &PMR_co
   }
 }
 
-// 归并移除 
-bool PMiner::eliminate(std::vector<unsigned> &PMR_remain, std::vector<unsigned> &isTraversed){
+// 归并移除 从需要全排列的匹配集合中移除已经作为中心点的点 从PMR_remain中移除isTraversed  返回bool  PMR_remain和isTraversed是否有交集
+bool PatternMatching::eliminate(std::vector<unsigned> &PMR_remain, std::vector<unsigned> &isTraversed){
   // cout<<"PMR_remain: ";
   // for(int i = 0 ; i< PMR_remain.size();++i){
   //   cout<<PMR_remain[i]<<" ";
@@ -1998,19 +2249,23 @@ bool PMiner::eliminate(std::vector<unsigned> &PMR_remain, std::vector<unsigned> 
   }
   return flag;
 }
-
-unsigned PMiner::set_operation2(std::vector<std::vector<unsigned>> &PMR_copy){
+// 集合运算求去重后全排数量 2行
+unsigned PatternMatching::set_operation2(std::vector<std::vector<unsigned>> &PMR_copy){
   unsigned cur_count = 0;
   cur_count = PMR_copy[0].size() * PMR_copy[1].size() - merge_count(PMR_copy[0], PMR_copy[1]);
   return cur_count;
 }
-
-unsigned PMiner::set_operation3(std::vector<std::vector<unsigned>> &PMR_copy){
+// 集合运算求去重后全排数量 3行
+unsigned PatternMatching::set_operation3(std::vector<std::vector<unsigned>> &PMR_copy){
   unsigned cur_count = 0;
   std::vector<unsigned> merge;
   int line1 = PMR_copy[0].size();
   int line2 = PMR_copy[1].size();
   int line3 = PMR_copy[2].size();
+  if(need_full_no_dup_rem){
+    // 不需要去重
+    return line1 * line2 * line3;
+  }
   merge_set(PMR_copy[0], PMR_copy[1], merge); // 求交结果要用，存储在merge中
   unsigned count12 = merge.size()*line3; // 1，2行重复个数
   unsigned count13 = merge_count(PMR_copy[0], PMR_copy[2])*line2; // 1，3行重复个数
@@ -2019,8 +2274,8 @@ unsigned PMiner::set_operation3(std::vector<std::vector<unsigned>> &PMR_copy){
   cur_count = line1*line2*line3 - count12 - count13 - count23 + count123;
   return cur_count;
 }
-
-unsigned PMiner::set_operation4(std::vector<std::vector<unsigned>> &PMR_copy){
+// 集合运算求去重后全排数量 4行
+unsigned PatternMatching::set_operation4(std::vector<std::vector<unsigned>> &PMR_copy){
   unsigned cur_count = 0;
   int line1 = PMR_copy[0].size();
   int line2 = PMR_copy[1].size();
@@ -2062,8 +2317,8 @@ unsigned PMiner::set_operation4(std::vector<std::vector<unsigned>> &PMR_copy){
   cur_count = line1*line2*line3*line4 - count12 - count13 - count14 - count23 - count24 - count34 + count123 + count124 + count234 + count134 + count1234 ;
   return cur_count;
 }
-
-unsigned long long PMiner::full_permutation2(std::vector<std::vector<unsigned>> &PMR_remain){
+// for循环的全排列 2行全排列
+unsigned long long PatternMatching::full_permutation2(std::vector<std::vector<unsigned>> &PMR_remain){
   // cout<<3<<endl;
   unsigned long long cur_count = 0;
   int line1 = PMR_remain[0].size();
@@ -2076,29 +2331,48 @@ unsigned long long PMiner::full_permutation2(std::vector<std::vector<unsigned>> 
   }
   return cur_count;
 }
-
-unsigned long long PMiner::full_permutation3(std::vector<std::vector<unsigned>> &PMR_remain){
+// for循环的全排列 3行全排列
+unsigned long long PatternMatching::full_permutation3(std::vector<std::vector<unsigned>> &PMR_remain){
   // cout<<3<<endl;
   unsigned long long cur_count = 0;
   int line1 = PMR_remain[0].size();
   int line2 = PMR_remain[1].size();
   int line3 = PMR_remain[2].size();
-  for(int i1 = 0; i1 < line1; ++i1){
-    int id1 = PMR_remain[0][i1];
-    for(int i2 = 0; i2 < line2; ++i2){
-      int id2 = PMR_remain[1][i2];
-      if(id1 != id2){
-        for(int i3 = 0; i3 < line3; ++i3){
-          int id3 = PMR_remain[2][i3];
-          if(id3!=id1 && id3!=id2)  ++cur_count;
+  if(need_full_no_dup_rem){
+    // 不需要去重判断
+    for(int i1 = 0; i1 < line1; ++i1){
+      // int id1 = PMR_remain[0][i1];
+      for(int i2 = 0; i2 < line2; ++i2){
+        // int id2 = PMR_remain[1][i2];
+        // if(id1 != id2){
+          for(int i3 = 0; i3 < line3; ++i3){
+            // int id3 = PMR_remain[2][i3];
+            // if(id3!=id1 && id3!=id2)  ++cur_count;
+             ++cur_count;
+          }
+        // }
+      }
+    }
+
+  }else{
+    // 需要去重判断
+    for(int i1 = 0; i1 < line1; ++i1){
+      int id1 = PMR_remain[0][i1];
+      for(int i2 = 0; i2 < line2; ++i2){
+        int id2 = PMR_remain[1][i2];
+        if(id1 != id2){
+          for(int i3 = 0; i3 < line3; ++i3){
+            int id3 = PMR_remain[2][i3];
+            if(id3!=id1 && id3!=id2)  ++cur_count;
+          }
         }
       }
     }
   }
   return cur_count;
 }
-
-unsigned long long PMiner::full_permutation4(std::vector<std::vector<unsigned>> &PMR_remain){
+// for循环的全排列 4行全排列
+unsigned long long PatternMatching::full_permutation4(std::vector<std::vector<unsigned>> &PMR_remain){
   // cout<<4<<endl;
   unsigned long long cur_count = 0;
   int line1 = PMR_remain[0].size();
@@ -2124,8 +2398,8 @@ unsigned long long PMiner::full_permutation4(std::vector<std::vector<unsigned>> 
   }
   return cur_count;
 }
-
-unsigned long long PMiner::full_permutation5(std::vector<std::vector<unsigned>> &PMR_remain){
+// for循环的全排列 5行全排列
+unsigned long long PatternMatching::full_permutation5(std::vector<std::vector<unsigned>> &PMR_remain){
   // cout<<5<<endl;
   unsigned long long cur_count = 0;
   int line1 = PMR_remain[0].size();
@@ -2158,8 +2432,8 @@ unsigned long long PMiner::full_permutation5(std::vector<std::vector<unsigned>> 
   }
   return cur_count;
 }
-
-unsigned long long PMiner::full_permutation(std::vector<std::vector<unsigned>> &PMR_remain, int index, unordered_set<unsigned>& set){
+// for循环的全排列 递归全排列 处理5行以上
+unsigned long long PatternMatching::full_permutation(std::vector<std::vector<unsigned>> &PMR_remain, int index, unordered_set<unsigned>& set){
   if(index == PMR_remain.size()) return 1;
   unsigned long long cur_count = 0;
   int line = PMR_remain[index].size();
@@ -2174,8 +2448,8 @@ unsigned long long PMiner::full_permutation(std::vector<std::vector<unsigned>> &
   return cur_count;
 }
 
-
-void PMiner::merge_un_set(std::vector<P_ID>& v1, std::vector<P_ID>& v2, std::unordered_set<P_ID>& un_set){
+// 归并求交 求交结果存储在un_set中
+void PatternMatching::merge_un_set(std::vector<P_ID>& v1, std::vector<P_ID>& v2, std::unordered_set<P_ID>& un_set){
   int i,j;
   // 求交
   i = j = 0;//定位到2个有序向量的头部
@@ -2197,8 +2471,8 @@ void PMiner::merge_un_set(std::vector<P_ID>& v1, std::vector<P_ID>& v2, std::uno
       }
   }
 }
-
-void PMiner::merge_set(std::vector<P_ID>& v1, std::vector<P_ID>& v2, std::vector<P_ID>& v3){
+// 归并求交 set_operation中调用 求交结果存储在v3中
+void PatternMatching::merge_set(std::vector<P_ID>& v1, std::vector<P_ID>& v2, std::vector<P_ID>& v3){
   int i,j;
   // 求交
   i = j = 0;//定位到2个有序向量的头部
@@ -2220,8 +2494,8 @@ void PMiner::merge_set(std::vector<P_ID>& v1, std::vector<P_ID>& v2, std::vector
       }
   }
 }
-
-unsigned PMiner::merge_count(std::vector<P_ID>& v1, std::vector<P_ID>& v2){
+// 归并求交 set_operation中调用 返回求交个数
+unsigned PatternMatching::merge_count(std::vector<P_ID>& v1, std::vector<P_ID>& v2){
   unsigned cur_count = 0;
   int i,j;
   // 求交
@@ -2246,8 +2520,8 @@ unsigned PMiner::merge_count(std::vector<P_ID>& v1, std::vector<P_ID>& v2){
 
   return cur_count;
 }
-
-bool PMiner::intersection(std::vector<R_ID> &Mtemp, std::vector<R_ID> &PMR_copy_oneline)
+//求交集函数第三版本，输入为两个一维集合,将求解两个集合交集并将结果更新到后者
+bool PatternMatching::intersection(std::vector<R_ID> &Mtemp, std::vector<R_ID> &PMR_copy_oneline)
 {
     std::unordered_set<R_ID> temp(Mtemp.begin(), Mtemp.end());
     bool is_empty = true;
@@ -2276,13 +2550,13 @@ bool PMiner::intersection(std::vector<R_ID> &Mtemp, std::vector<R_ID> &PMR_copy_
 
     return is_empty;
 }
-
+//更改后的函数，计算与模式边vps, vpt端点vpt匹配的真实图顶点
 
 
 
 
 //sky20220301，同构体去除函数，参数为待检查的结果，Equivalent_order为等价点的严格顺序二维数组
-bool PMiner::De_duplication(std::vector<unsigned> unchecked_res)
+bool PatternMatching::De_duplication(std::vector<unsigned> unchecked_res)
 {
     //先检查当前结果中是否存在重复值
     unordered_set<unsigned> res_set;
@@ -2318,7 +2592,7 @@ bool PMiner::De_duplication(std::vector<unsigned> unchecked_res)
     // }
     return true;
 }
-unsigned PMiner::full_arrangement(std::vector<vector<R_ID>> cur_thread_PMR) {
+unsigned PatternMatching::full_arrangement(std::vector<vector<R_ID>> cur_thread_PMR) {
   // cout<<"full_arrangement"<<endl;
   // cout<<"33333333"<<endl;
   // print_PMR(cur_thread_PMR);
@@ -2386,7 +2660,7 @@ unsigned PMiner::full_arrangement(std::vector<vector<R_ID>> cur_thread_PMR) {
 
     return count;
 }
-bool PMiner::check_result(std::vector<unsigned> PMR_copy)
+bool PatternMatching::check_result(std::vector<unsigned> PMR_copy)
 {
     // cout<<"----------"<<endl;
     for (auto k : PMR_copy)
@@ -2426,7 +2700,7 @@ bool PMiner::check_result(std::vector<unsigned> PMR_copy)
     }
     return true;
 }
-bool PMiner::check_result(std::vector<std::vector<unsigned>> &PMR_copy)
+bool PatternMatching::check_result(std::vector<std::vector<unsigned>> &PMR_copy)
 {
     //先检查挖掘结果是否有结点映射为空集合
     for (auto P_i : PMR_copy)
@@ -2484,7 +2758,7 @@ bool PMiner::check_result(std::vector<std::vector<unsigned>> &PMR_copy)
     //当前分支判断结束，输出
     // std::cout << "Current branch check is complete." << std::endl;
 }
-bool PMiner::get_Radj_Index(R_ID v_r, int &start, int &end)
+bool PatternMatching::get_Radj_Index(R_ID v_r, int &start, int &end)
 {
     if (v_r == vertexNum_R - 1)
     {
@@ -2501,7 +2775,7 @@ bool PMiner::get_Radj_Index(R_ID v_r, int &start, int &end)
 
 
 //打印PMR，用于测试
-void PMiner::print_P_adj(std::vector<std::vector<P_ID>> &P_adj)
+void PatternMatching::print_P_adj(std::vector<std::vector<P_ID>> &P_adj)
 {
     std::cout << "Print P_adj." << std::endl;
     cout<<"x ";
@@ -2522,7 +2796,7 @@ void PMiner::print_P_adj(std::vector<std::vector<P_ID>> &P_adj)
 }
 
 //打印PMR，用于测试
-void PMiner::print_PMR(std::vector<std::vector<unsigned>> &PMR_copy)
+void PatternMatching::print_PMR(std::vector<std::vector<unsigned>> &PMR_copy)
 {
     std::cout << "Print current PMR collection." << std::endl;
     for (int i = 0; i < PMR_copy.size(); i++)
@@ -2539,7 +2813,7 @@ void PMiner::print_PMR(std::vector<std::vector<unsigned>> &PMR_copy)
 
 
 //将起点写入txt文件
-void PMiner::print_totxt_start(vector<R_ID> minMatchID_PMR){
+void PatternMatching::print_totxt_start(vector<R_ID> minMatchID_PMR){
   sort(minMatchID_PMR.begin(),minMatchID_PMR.end());
   string outputfilename = startsIdsfilename;
   ofstream file(outputfilename);
@@ -2550,7 +2824,7 @@ void PMiner::print_totxt_start(vector<R_ID> minMatchID_PMR){
 }
 
 //读入起点
-void PMiner::input_start(vector<R_ID>& minMatchID_PMR){
+void PatternMatching::input_start(vector<R_ID>& minMatchID_PMR){
   ifstream file5(startsIdsfilename);
   vector<R_ID> a;
   string line5;
